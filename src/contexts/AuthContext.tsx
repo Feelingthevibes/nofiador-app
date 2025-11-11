@@ -28,8 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
     const { setLanguage } = useLanguage();
     
-    // DEBUGGING STEP: Temporarily check for admin by email to bypass RLS issue on profile load.
-    const isAdmin = useMemo(() => user?.email === 'whatjut@gmail.com', [user]);
+    // FINAL FIX: Reverted to the correct role-based admin check.
+    const isAdmin = useMemo(() => user?.profile?.role === 'admin', [user]);
 
     const fetchUserProfile = async (supabaseUser: any): Promise<UserProfile | null> => {
         const { data: profile, error } = await supabase
