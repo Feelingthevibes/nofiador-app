@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './src/components/contexts/AuthContext';
-import { LanguageProvider } from './src/components/contexts/LanguageContext';
-import { PropertyProvider } from './src/components/contexts/PropertyContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { PropertyProvider } from './contexts/PropertyContext';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -15,35 +15,37 @@ import LoginModal from './components/LoginModal';
 import SignupModal from './components/SignupModal';
 import { AuthModal } from './types';
 
-// Custom event dispatcher for programmatic navigation
+// Custom navigation function using hash routing
 export const navigateTo = (path: string) => {
-    window.dispatchEvent(new CustomEvent('navigate', { detail: { path } }));
+    // Ensure the hash always starts with # and the path with /
+    const newHash = `#${path.startsWith('/') ? path : '/' + path}`;
+    if (window.location.hash !== newHash) {
+        window.location.hash = newHash;
+    }
 };
 
+
 const AppRouter: React.FC = () => {
-    const [currentPath, setCurrentPath] = useState(window.location.pathname);
+    const getPathFromHash = () => {
+        const hash = window.location.hash.slice(1); // Remove leading '#'
+        return hash || '/'; // Default to root path
+    };
+
+    const [currentPath, setCurrentPath] = useState(getPathFromHash());
     const [authModal, setAuthModal] = useState<AuthModal>(null);
     const { isAuthenticated, loading } = useAuth();
 
     useEffect(() => {
-        const onLocationChange = () => {
-            setCurrentPath(window.location.pathname);
+        const handleHashChange = () => {
+            setCurrentPath(getPathFromHash());
         };
-        window.addEventListener('popstate', onLocationChange);
+        window.addEventListener('hashchange', handleHashChange);
         
-        const onNavigate = ((e: CustomEvent) => {
-            const { path } = e.detail;
-            if (window.location.pathname !== path) {
-                window.history.pushState({}, '', path);
-                setCurrentPath(path);
-            }
-        }) as EventListener;
-
-        window.addEventListener('navigate', onNavigate);
+        // Set initial path in case the page is loaded with a hash
+        handleHashChange();
 
         return () => {
-            window.removeEventListener('popstate', onLocationChange);
-            window.removeEventListener('navigate', onNavigate);
+            window.removeEventListener('hashchange', handleHashChange);
         };
     }, []);
 
@@ -51,23 +53,20 @@ const AppRouter: React.FC = () => {
     if (loading) {
         content = <div className="text-center p-12">Loading...</div>;
     } else {
-        if (currentPath === '/') {
-            content = <PropertyList />;
-        } else if (currentPath.startsWith('/property/')) {
+        if (currentPath.startsWith('/property/')) {
             const slug = currentPath.split('/')[2];
             content = <PropertyDetailView slug={slug} />;
         } else if (currentPath === '/profile') {
-            content = isAuthenticated ? <ProfileView /> : <PropertyList />;
+            content = isAuthenticated ? <ProfileView /> : <PropertyList openAuthModal={setAuthModal} />;
         } else if (currentPath.startsWith('/list')) {
              const propertyId = currentPath.split('/')[2];
-             content = isAuthenticated ? <ListPropertyView propertyId={propertyId ? parseInt(propertyId) : undefined} /> : <PropertyList />;
+             content = isAuthenticated ? <ListPropertyView propertyId={propertyId ? parseInt(propertyId) : undefined} /> : <PropertyList openAuthModal={setAuthModal} />;
         } else if (currentPath === '/settings') {
-            content = isAuthenticated ? <SettingsView /> : <PropertyList />;
+            content = isAuthenticated ? <SettingsView /> : <PropertyList openAuthModal={setAuthModal} />;
         } else {
-            content = <div className="text-center py-10">
-                <h1 className="text-4xl font-bold">404</h1>
-                <p className="text-xl text-gray-600">Page Not Found</p>
-            </div>;
+            // Default to PropertyList for the root path ('/') and any other unrecognized paths.
+            // This prevents the 404 error on initial load.
+            content = <PropertyList openAuthModal={setAuthModal} />;
         }
     }
 

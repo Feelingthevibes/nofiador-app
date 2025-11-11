@@ -1,7 +1,7 @@
 import React from 'react';
-import { useAuth } from './contexts/AuthContext';
-import { useLanguage } from './contexts/LanguageContext';
-import { useProperties } from './contexts/PropertyContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useProperties } from '../contexts/PropertyContext';
 import { Property } from '../types';
 import PropertyCard from './PropertyCard';
 import PropertyDetailModal from './PropertyDetailModal';

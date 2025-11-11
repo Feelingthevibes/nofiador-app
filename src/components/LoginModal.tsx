@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth } from './contexts/AuthContext';
-import { useLanguage } from './contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LoginModalProps {
     onClose: () => void;

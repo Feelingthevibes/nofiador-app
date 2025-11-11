@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { NewPropertyData } from '../types';
-import { useLanguage } from './contexts/LanguageContext';
-import { useAuth } from './contexts/AuthContext';
-import { useProperties } from './contexts/PropertyContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useProperties } from '../contexts/PropertyContext';
 import { neighborhoods } from '../constants';
 import { navigateTo } from '../App';
+import { supabase } from '../lib/supabaseClient';
 
 interface ListPropertyViewProps {
   propertyId?: number;
@@ -28,9 +29,11 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
     area: 0,
     images: [],
   });
-  const [imageInput, setImageInput] = useState('');
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (propertyId && properties.length > 0) {
@@ -38,7 +41,6 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
       if (propertyToEdit) {
         const { id, landlord_id, slug, profiles, ...editableData } = propertyToEdit;
         setFormData(editableData);
-        setImageInput(propertyToEdit.images.join(', '));
         setIsEditing(true);
       }
     }
@@ -62,9 +64,24 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
     setFormData(prev => ({ ...prev, [name]: ['price', 'bedrooms', 'bathrooms', 'area'].includes(name) ? Number(value) : value }));
   };
   
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setImageInput(e.target.value);
-    setFormData(prev => ({...prev, images: e.target.value.split(',').map(url => url.trim()).filter(url => url) }));
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+        const files = Array.from(e.target.files);
+        const totalImages = formData.images.length + newImageFiles.length + files.length;
+        if (totalImages > 20) {
+            alert('You can upload a maximum of 20 images.');
+            return;
+        }
+        setNewImageFiles(prev => [...prev, ...files]);
+    }
+  }
+
+  const removeNewImage = (index: number) => {
+    setNewImageFiles(prev => prev.filter((_, i) => i !== index));
+  }
+
+  const removeExistingImage = (url: string) => {
+    setFormData(prev => ({ ...prev, images: prev.images.filter(imgUrl => imgUrl !== url) }));
   }
 
   const nextStep = () => setStep(s => s + 1);
@@ -72,12 +89,43 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
 
   const handleSubmit = async () => {
     setIsLoading(true);
+    setFormError(null);
+    let finalImageUrls = [...formData.images];
+
+    if (newImageFiles.length > 0) {
+        setIsUploading(true);
+        const uploadPromises = newImageFiles.map(file => {
+            const filePath = `${user!.id}/${Date.now()}-${file.name}`;
+            return supabase.storage.from('property_images').upload(filePath, file);
+        });
+
+        try {
+            const uploadResults = await Promise.all(uploadPromises);
+            
+            const newUrls = uploadResults.map(result => {
+                if (result.error) throw result.error;
+                const { data } = supabase.storage.from('property_images').getPublicUrl(result.data.path);
+                return data.publicUrl;
+            });
+
+            finalImageUrls = [...finalImageUrls, ...newUrls];
+        } catch (uploadError: any) {
+            setFormError(`${t('error_uploading_images')}: ${uploadError.message}`);
+            setIsLoading(false);
+            setIsUploading(false);
+            return;
+        }
+        setIsUploading(false);
+    }
+
+    const propertyDataToSubmit = { ...formData, images: finalImageUrls };
+    
     let error = null;
     if (isEditing && propertyId) {
-      const { error: updateError } = await updateProperty(propertyId, formData);
+      const { error: updateError } = await updateProperty(propertyId, propertyDataToSubmit);
       error = updateError;
     } else {
-      const { error: addError } = await addProperty(formData);
+      const { error: addError } = await addProperty(propertyDataToSubmit);
       error = addError;
     }
 
@@ -85,7 +133,7 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
     if (!error) {
       navigateTo('/profile');
     } else {
-      alert(`Error: ${error.message}`);
+      setFormError(`Error: ${error.message}`);
     }
   };
   
@@ -152,19 +200,42 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
         return (
            <div>
             <h3 className="text-xl font-semibold mb-4">{t('step_3_title')}</h3>
-             <div>
-                <label className="block text-sm font-medium text-gray-700">{t('photo_urls')}</label>
-                <input type="text" value={imageInput} onChange={handleImageChange} placeholder={t('photo_urls_placeholder')} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"/>
-                <p className="text-xs text-gray-500 mt-1">For demo purposes, please paste URLs from a site like picsum.photos, separated by commas.</p>
-            </div>
-            <div className="mt-4">
-                <h4 className="text-sm font-medium text-gray-700">{t('photo_preview')}</h4>
-                <div className="grid grid-cols-3 gap-2 mt-2 bg-gray-100 p-2 rounded-md min-h-[80px]">
-                    {formData.images.map((url, index) => (
-                        <img key={index} src={url} alt={`preview ${index}`} className="w-full h-24 object-cover rounded"/>
-                    ))}
+            <p className="text-sm text-gray-500 mb-4">{t('step_3_subtitle')}</p>
+            
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                <div className="space-y-1 text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <div className="flex text-sm text-gray-600">
+                        <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-brand-primary hover:text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-primary">
+                            <span>{t('upload_prompt')}</span>
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple accept="image/png, image/jpeg" onChange={handleFileSelect} />
+                        </label>
+                    </div>
+                    <p className="text-xs text-gray-500">{t('upload_limit')}</p>
                 </div>
             </div>
+
+            {(formData.images.length > 0 || newImageFiles.length > 0) && (
+              <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700">{t('photo_preview')}</h4>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mt-2 bg-gray-100 p-2 rounded-md min-h-[80px]">
+                      {formData.images.map((url, index) => (
+                        <div key={`existing-${index}`} className="relative group">
+                          <img src={url} alt={`preview ${index}`} className="w-full h-24 object-cover rounded"/>
+                          <button onClick={() => removeExistingImage(url)} className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+                        </div>
+                      ))}
+                      {newImageFiles.map((file, index) => (
+                        <div key={`new-${index}`} className="relative group">
+                          <img src={URL.createObjectURL(file)} alt={`preview ${file.name}`} className="w-full h-24 object-cover rounded"/>
+                           <button onClick={() => removeNewImage(index)} className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+                        </div>
+                      ))}
+                  </div>
+              </div>
+            )}
           </div>
         );
       case 4:
@@ -172,11 +243,35 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
             <div>
                 <h3 className="text-xl font-semibold mb-4">{t('step_4_title')}</h3>
                 <div className="bg-brand-light p-6 rounded-lg text-center">
-                    <p className="text-xl font-semibold text-brand-dark">{t('listing_fee')}</p>
-                    <button onClick={handleSubmit} disabled={isLoading} className="mt-4 w-full max-w-xs mx-auto bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center disabled:bg-gray-400">
-                        {isLoading && <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
-                        {isLoading ? 'Processing...' : t('pay_with_paypal')}
-                    </button>
+                    <p className="text-lg text-gray-700 mb-2">{t('listing_fee')}</p>
+                    <p className="text-3xl font-bold text-brand-dark mb-6">$9.99 USD</p>
+                    
+                    {formError && (
+                        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 text-left" role="alert">
+                           <p className="font-bold">{t('error_title')}</p>
+                           <p>{formError}</p>
+                        </div>
+                    )}
+                    
+                    {isLoading ? (
+                        <div className="flex items-center justify-center text-gray-600">
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <span>{isUploading ? t('uploading_images') : t('payment_processing')}</span>
+                        </div>
+                    ) : (
+                       <>
+                         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 text-left" role="alert">
+                           <p className="font-bold">{t('developer_note_title')}</p>
+                           <p>{t('developer_note_paypal')}</p>
+                         </div>
+                         <button 
+                           onClick={handleSubmit} 
+                           className="w-full bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition-colors"
+                         >
+                           {t('simulate_payment_and_publish')}
+                         </button>
+                       </>
+                    )}
                 </div>
             </div>
         );
@@ -201,7 +296,7 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
       </div>
       
       <div className="flex justify-between mt-8 border-t pt-6">
-        <button onClick={prevStep} disabled={step === 1} className="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50">
+        <button onClick={prevStep} disabled={step === 1 || isLoading} className="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50">
           {t('back_step')}
         </button>
         {step < 4 ? (
@@ -209,8 +304,15 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
             {t('next_step')}
             </button>
         ) : (
+            !isEditing && (
+                 <button onClick={handleSubmit} disabled={true} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50 invisible">
+                    {t('publish_listing')}
+                </button>
+            )
+        )}
+         {isEditing && step === 4 && (
              <button onClick={handleSubmit} disabled={isLoading} className="bg-brand-secondary text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-600 transition-colors">
-                {isEditing ? t('update_listing') : t('publish_listing')}
+                {t('update_listing')}
             </button>
         )}
       </div>

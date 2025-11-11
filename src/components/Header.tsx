@@ -1,6 +1,6 @@
 import React from 'react';
-import { useLanguage } from './contexts/LanguageContext';
-import { useAuth } from './contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Language, AuthModal } from '../types';
 import { navigateTo } from '../App';
 

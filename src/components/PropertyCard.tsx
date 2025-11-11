@@ -1,7 +1,7 @@
 import React from 'react';
 import { Property } from '../types';
-import { useLanguage } from './contexts/LanguageContext';
-import { useAuth } from './contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { navigateTo } from '../App';
 
 interface PropertyCardProps {

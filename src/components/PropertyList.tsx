@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Property } from '../types';
+import { Property, AuthModal } from '../types';
 import PropertyCard from './PropertyCard';
 import PropertyDetailModal from './PropertyDetailModal';
-import { useLanguage } from './contexts/LanguageContext';
-import { useProperties } from './contexts/PropertyContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useProperties } from '../contexts/PropertyContext';
+import { useAuth } from '../contexts/AuthContext';
 import { neighborhoods } from '../constants';
+import { navigateTo } from '../App';
 
 const Hero: React.FC = () => {
     const { t } = useLanguage();
@@ -46,8 +48,14 @@ const FilterBar: React.FC<{
     )
 }
 
-const PropertyList: React.FC = () => {
+interface PropertyListProps {
+  openAuthModal: (modal: AuthModal) => void;
+}
+
+const PropertyList: React.FC<PropertyListProps> = ({ openAuthModal }) => {
   const { properties, loading, error } = useProperties();
+  const { t } = useLanguage();
+  const { isAuthenticated } = useAuth();
   const [neighborhoodFilter, setNeighborhoodFilter] = useState('');
   const [sortBy, setSortBy] = useState('default');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -64,6 +72,14 @@ const PropertyList: React.FC = () => {
     }
     return result;
   }, [properties, neighborhoodFilter, sortBy]);
+
+  const handleListPropertyClick = () => {
+    if (isAuthenticated) {
+        navigateTo('/list');
+    } else {
+        openAuthModal('login');
+    }
+  };
 
   if (loading) {
     return <div className="text-center py-10">Loading properties...</div>;
@@ -82,15 +98,28 @@ const PropertyList: React.FC = () => {
         sortBy={sortBy}
         setSortBy={setSortBy}
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredAndSortedProperties.map((property) => (
-          <PropertyCard
-            key={property.id}
-            property={property}
-            onSelectProperty={() => setSelectedProperty(property)}
-          />
-        ))}
-      </div>
+      {filteredAndSortedProperties.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredAndSortedProperties.map((property) => (
+            <PropertyCard
+              key={property.id}
+              property={property}
+              onSelectProperty={() => setSelectedProperty(property)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md">
+            <h3 className="text-2xl font-semibold text-brand-dark mb-2">{t('no_properties_found_title')}</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-6">{t('no_properties_found_message')}</p>
+            <button 
+              onClick={handleListPropertyClick}
+              className="bg-brand-primary text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 transition-colors duration-300"
+            >
+              {t('list_your_property_cta')}
+            </button>
+        </div>
+      )}
       {selectedProperty && (
         <PropertyDetailModal
           property={selectedProperty}

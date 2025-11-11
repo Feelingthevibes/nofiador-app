@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth } from './contexts/AuthContext';
-import { useLanguage } from './contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Role, Language } from '../types';
 
 interface SignupModalProps {
@@ -13,7 +13,8 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSwitch }) => {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState<Role>('renter');
     const [preferredLanguage, setPreferredLanguage] = useState<Language>('en');
-    const [error, setError] = useState('');
+    const [message, setMessage] = useState('');
+    const [isError, setIsError] = useState(false);
     const [loading, setLoading] = useState(false);
     const { signup } = useAuth();
     const { t } = useLanguage();
@@ -21,12 +22,22 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSwitch }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
+        setMessage('');
+        setIsError(false);
+
         const { error: signupError } = await signup(email, password, role, preferredLanguage);
+
         if (signupError) {
-            setError(signupError.message || t('signup_failed'));
+            setIsError(true);
+            if (signupError.message.toLowerCase().includes('user already registered')) {
+                setMessage(t('signup_failed_login_instead'));
+            } else {
+                setMessage(signupError.message || t('signup_failed'));
+            }
         } else {
-            onClose(); // On successful signup, Supabase listener in AuthContext will handle the session.
+            setIsError(false);
+            setMessage(t('signup_success'));
+            // Don't close modal immediately, show success message
         }
         setLoading(false);
     };
@@ -39,43 +50,55 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSwitch }) => {
                         <h2 className="text-xl font-bold text-brand-dark">{t('create_account')}</h2>
                         <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
                     </div>
-                    <form onSubmit={handleSubmit}>
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="signup-email">{t('email')}</label>
-                            <input
-                                id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required
-                            />
+
+                    {message && !isError ? (
+                        <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
+                            <p>{message}</p>
+                            <button onClick={onClose} className="mt-4 bg-brand-primary text-white font-bold py-2 px-4 rounded-lg">
+                                {t('close')}
+                            </button>
                         </div>
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="signup-password">{t('password')}</label>
-                            <input
-                                id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required
-                            />
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">{t('i_am_a')}</label>
-                            <div className="flex">
-                                <button type="button" onClick={() => setRole('renter')} className={`w-1/2 py-2 text-sm rounded-l-lg ${role === 'renter' ? 'bg-brand-primary text-white' : 'bg-gray-200'}`}>{t('renter')}</button>
-                                <button type="button" onClick={() => setRole('landlord')} className={`w-1/2 py-2 text-sm rounded-r-lg ${role === 'landlord' ? 'bg-brand-primary text-white' : 'bg-gray-200'}`}>{t('landlord')}</button>
-                            </div>
-                        </div>
-                         <div className="mb-6">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">{t('language')}</label>
-                            <div className="flex">
-                                <button type="button" onClick={() => setPreferredLanguage('en')} className={`w-1/2 py-2 text-sm rounded-l-lg ${preferredLanguage === 'en' ? 'bg-brand-primary text-white' : 'bg-gray-200'}`}>English</button>
-                                <button type="button" onClick={() => setPreferredLanguage('es')} className={`w-1/2 py-2 text-sm rounded-r-lg ${preferredLanguage === 'es' ? 'bg-brand-primary text-white' : 'bg-gray-200'}`}>Español</button>
-                            </div>
-                        </div>
-                        {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
-                        <button type="submit" disabled={loading} className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 disabled:bg-gray-400">
-                            {loading ? 'Creating account...' : t('signup')}
-                        </button>
-                    </form>
-                    <p className="text-center text-sm text-gray-600 mt-4">
-                        {t('already_have_account')} <span onClick={onSwitch} className="font-bold text-brand-secondary cursor-pointer hover:underline">{t('login')}</span>
-                    </p>
+                    ) : (
+                        <>
+                            <form onSubmit={handleSubmit}>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="signup-email">{t('email')}</label>
+                                    <input
+                                        id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="signup-password">{t('password')}</label>
+                                    <input
+                                        id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2">{t('i_am_a')}</label>
+                                    <div className="flex">
+                                        <button type="button" onClick={() => setRole('renter')} className={`w-1/2 py-2 text-sm rounded-l-lg ${role === 'renter' ? 'bg-brand-primary text-white' : 'bg-gray-200'}`}>{t('renter')}</button>
+                                        <button type="button" onClick={() => setRole('landlord')} className={`w-1/2 py-2 text-sm rounded-r-lg ${role === 'landlord' ? 'bg-brand-primary text-white' : 'bg-gray-200'}`}>{t('landlord')}</button>
+                                    </div>
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2">{t('language')}</label>
+                                    <div className="flex">
+                                        <button type="button" onClick={() => setPreferredLanguage('en')} className={`w-1/2 py-2 text-sm rounded-l-lg ${preferredLanguage === 'en' ? 'bg-brand-primary text-white' : 'bg-gray-200'}`}>English</button>
+                                        <button type="button" onClick={() => setPreferredLanguage('es')} className={`w-1/2 py-2 text-sm rounded-r-lg ${preferredLanguage === 'es' ? 'bg-brand-primary text-white' : 'bg-gray-200'}`}>Español</button>
+                                    </div>
+                                </div>
+                                {message && isError && <p className="text-red-500 text-xs italic mb-4">{message}</p>}
+                                <button type="submit" disabled={loading} className="w-full bg-brand-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 disabled:bg-gray-400">
+                                    {loading ? 'Creating account...' : t('signup')}
+                                </button>
+                            </form>
+                            <p className="text-center text-sm text-gray-600 mt-4">
+                                {t('already_have_account')} <span onClick={onSwitch} className="font-bold text-brand-secondary cursor-pointer hover:underline">{t('login')}</span>
+                            </p>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

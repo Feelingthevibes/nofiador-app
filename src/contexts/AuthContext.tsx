@@ -1,8 +1,9 @@
 import React, { createContext, useState, useEffect, useContext, useMemo } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { User, Role, Language, UserProfile } from '../../../types';
+import { supabase } from '../lib/supabaseClient';
+import { User, Role, Language, UserProfile } from '../types';
 import type { Session } from '@supabase/supabase-js';
 import { useLanguage } from './LanguageContext';
+import { navigateTo } from '../App';
 
 interface AuthContextType {
     user: User | null;
@@ -55,6 +56,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
+            
+            // FIX: Redirect to profile on SIGNED_IN event.
+            // This handles redirects for both email verification and regular login.
+            // The previous condition was preventing the redirect after email confirmation.
+            if (_event === 'SIGNED_IN') {
+                // Use a timeout to ensure Supabase client has cleared the URL hash
+                // and React state has updated before navigation.
+                setTimeout(() => {
+                    navigateTo('/profile');
+                }, 0);
+            }
+
             if (session?.user) {
                 const profile = await fetchUserProfile(session.user);
                 setUser({ ...session.user, profile });
