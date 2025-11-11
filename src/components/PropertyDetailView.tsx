@@ -21,7 +21,7 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
     const { language, t } = useLanguage();
     const { user, toggleSaveProperty } = useAuth();
     const [property, setProperty] = useState<Property | null>(null);
-    const [mainImage, setMainImage] = useState<string>('');
+    const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
     useEffect(() => {
@@ -29,7 +29,7 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
             const foundProperty = properties.find(p => p.slug === slug);
             if (foundProperty) {
                 setProperty(foundProperty);
-                setMainImage(foundProperty.images[0] || 'https://picsum.photos/seed/placeholder/1200/800');
+                setSelectedImageIndex(0); // Reset to the first image
             }
         }
     }, [slug, properties, loading]);
@@ -42,6 +42,7 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
         return <div className="text-center py-12">Property not found.</div>;
     }
     
+    const mainImage = property.images[selectedImageIndex] || property.images[0] || 'https://picsum.photos/seed/placeholder/1200/800';
     const youtubeId = property.video_url ? getYouTubeID(property.video_url) : null;
     const isSaved = user?.profile?.role === 'renter' && user.profile.saved_properties.includes(property.id);
 
@@ -74,8 +75,8 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
                                     key={index}
                                     src={img}
                                     alt={`Thumbnail ${index + 1}`}
-                                    className={`w-24 h-24 object-cover rounded-md cursor-pointer border-2 ${mainImage === img ? 'border-brand-primary' : 'border-transparent'}`}
-                                    onClick={() => setMainImage(img)}
+                                    className={`w-24 h-24 object-cover rounded-md cursor-pointer border-2 ${selectedImageIndex === index ? 'border-brand-primary' : 'border-transparent'}`}
+                                    onClick={() => setSelectedImageIndex(index)}
                                 />
                             ))}
                         </div>
