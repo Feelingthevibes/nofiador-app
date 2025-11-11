@@ -29,7 +29,9 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, onSwitch }) => {
 
         if (signupError) {
             setIsError(true);
-            if (signupError.message.toLowerCase().includes('user already registered')) {
+            const msg = signupError.message.toLowerCase();
+            // Expanded check to catch different phrasings for an existing user error from Supabase.
+            if (msg.includes('user already registered') || msg.includes('already exists')) {
                 setMessage(t('signup_failed_login_instead'));
             } else {
                 setMessage(signupError.message || t('signup_failed'));
