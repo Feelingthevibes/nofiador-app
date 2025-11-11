@@ -104,6 +104,8 @@ export const translations = {
     developer_note_paypal: "This is a simulated payment for testing in this environment. The live PayPal button will function on a standard web host.",
     simulate_payment_and_publish: "Simulate Payment & Publish",
     error_title: "Error",
+    youtube_video_link: "YouTube Video Link",
+    video_tour: "Video Tour",
   },
   es: {
     site_name: "NoFiador.com",
@@ -210,6 +212,8 @@ export const translations = {
     developer_note_paypal: "Este es un pago simulado para pruebas en este entorno. El botón de PayPal en vivo funcionará en un alojamiento web estándar.",
     simulate_payment_and_publish: "Simular Pago y Publicar",
     error_title: "Error",
+    youtube_video_link: "Enlace de Video de YouTube",
+    video_tour: "Tour en Video",
   },
 };
 

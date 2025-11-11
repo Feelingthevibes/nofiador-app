@@ -32,6 +32,7 @@ export interface Property {
   area: number; 
   images: string[];
   slug: string;
+  video_url?: string;
   profiles: {
     contact_name: string | null;
     contact_phone: string | null;

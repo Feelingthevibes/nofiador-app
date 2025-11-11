@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useProperties } from './contexts/PropertyContext';
-import { useLanguage } from './contexts/LanguageContext';
-import { useAuth } from './contexts/AuthContext';
+import { useProperties } from '../contexts/PropertyContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Property } from '../types';
 import { navigateTo } from '../App';
 
 interface PropertyDetailViewProps {
     slug: string;
 }
+
+const getYouTubeID = (url: string): string | null => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+};
 
 const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
     const { properties, loading } = useProperties();
@@ -33,7 +40,8 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
     if (!property) {
         return <div className="text-center py-12">Property not found.</div>;
     }
-
+    
+    const youtubeId = property.video_url ? getYouTubeID(property.video_url) : null;
     const isSaved = user?.profile?.role === 'renter' && user.profile.saved_properties.includes(property.id);
 
     const formatPrice = (price: number) => {
@@ -110,6 +118,22 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
                             </div>
                         </div>
                     </div>
+
+                    {youtubeId && (
+                        <div className="md:col-span-5 p-4 md:p-6 border-t">
+                            <h3 className="text-2xl font-bold text-brand-dark mb-4">{t('video_tour')}</h3>
+                            <div className="relative w-full shadow-lg" style={{ paddingTop: '56.25%' }}> {/* 16:9 Aspect Ratio */}
+                                <iframe
+                                    className="absolute top-0 left-0 w-full h-full rounded-lg"
+                                    src={`https://www.youtube.com/embed/${youtubeId}`}
+                                    title="YouTube video player"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

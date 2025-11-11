@@ -28,6 +28,7 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
     bathrooms: 1,
     area: 0,
     images: [],
+    video_url: '',
   });
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -202,6 +203,17 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
                  <div>
                     <label className="block text-sm font-medium text-gray-700">{t('description_es')}</label>
                     <textarea name="description_es" value={formData.description_es} onChange={handleChange} rows={4} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">{t('youtube_video_link')}</label>
+                    <input 
+                        type="url" 
+                        name="video_url" 
+                        value={formData.video_url || ''} 
+                        onChange={handleChange} 
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" 
+                    />
                 </div>
             </div>
           </div>
