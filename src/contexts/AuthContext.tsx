@@ -152,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchAllUsers = async () => {
         if (!isAdmin) return { data: null, error: new Error('Permission denied.') };
-        const { data, error } = await supabase.from('profiles').select('*');
+        const { data, error } = await supabase.rpc('get_all_users_with_email');
         return { data, error };
     };
 

@@ -11,6 +11,7 @@ export interface UserProfile {
   preferred_language: Language;
   contact_name: string | null;
   contact_phone: string | null;
+  email?: string; // For admin view
 }
 
 // FIX: Changed interface extending a type to a type alias for better compatibility.
