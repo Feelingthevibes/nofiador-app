@@ -40,9 +40,8 @@ const Header: React.FC<HeaderProps> = ({ currentPath, openAuthModal }) => {
 
     const authButtonStyle = "cursor-pointer text-sm sm:text-base font-medium text-gray-500 hover:text-brand-dark";
 
-    const handleLogout = async () => {
-        await logout();
-        navigateTo('/');
+    const handleLogout = () => {
+        logout();
     }
 
     return (

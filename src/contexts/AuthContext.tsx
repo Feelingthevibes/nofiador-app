@@ -73,14 +73,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
                 setUser(null);
             }
-
-            // FIX: Handle redirect after successful sign-in, including email confirmation.
-            // Check for the SIGNED_IN event and ensure a profile has been loaded before redirecting.
+            
             if (_event === 'SIGNED_IN' && profile) {
-                // Use a minimal timeout to ensure the state update has propagated through React
                 setTimeout(() => {
                     navigateTo('/profile');
                 }, 0);
+            }
+
+            if (_event === 'SIGNED_OUT') {
+                navigateTo('/');
             }
         });
 
@@ -109,11 +110,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const logout = async () => {
-        await supabase.auth.signOut();
-        // FIX: Manually set user to null immediately after sign-out.
-        // This makes the UI update instantly and reliably, fixing the race condition
-        // where the app was waiting for the onAuthStateChange listener which could be delayed.
-        setUser(null);
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error("Error logging out:", error.message);
+        }
     };
     
     const updateProfile = async (updates: Partial<UserProfile>) => {
