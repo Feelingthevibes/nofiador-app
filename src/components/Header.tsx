@@ -58,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({ currentPath, openAuthModal }) => {
                             <span onClick={() => navigateTo('/')} className={navLinkStyle('/')}>
                                 {t('browse_properties')}
                             </span>
-                             {isAuthenticated && user?.profile?.role === 'landlord' && (
+                             {(isAuthenticated && (user?.profile?.role === 'landlord' || isAdmin)) && (
                                 <span onClick={() => navigateTo('/list')} className={navLinkStyle('/list')}>
                                     {t('list_property')}
                                 </span>
