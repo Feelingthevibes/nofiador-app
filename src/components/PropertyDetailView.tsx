@@ -32,12 +32,14 @@ const ContactLandlordForm: React.FC<{ landlordId: string }> = ({ landlordId }) =
         
         const conversation = await startConversation(landlordId);
         if (conversation) {
-            selectConversation(conversation); // Select it for the main chat view
-            const { error } = await sendMessage(message);
+            // FIX: Send message directly with the new conversation ID to avoid race condition
+            const { error } = await sendMessage(message, conversation.id);
             if (error) {
                 setStatus(t('message_failed'));
             } else {
                 setStatus(t('message_sent'));
+                // Select conversation after sending for navigation to chat view
+                selectConversation(conversation);
                 setTimeout(() => navigateTo('/messages'), 1500);
             }
         } else {
@@ -179,7 +181,7 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug, openAuthM
                             {user?.profile?.role === 'renter' && (
                                 <button onClick={() => toggleSaveProperty(property.id)} className={`w-full font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center ${isSaved ? 'bg-red-100 text-red-600 border border-red-200' : 'bg-brand-primary text-white hover:bg-red-600'}`}>
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        <path strokeLinecap="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                     </svg>
                                     {isSaved ? t('saved') : t('save')}
                                 </button>

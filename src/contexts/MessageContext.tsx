@@ -10,7 +10,7 @@ interface MessageContextType {
     loadingConversations: boolean;
     loadingMessages: boolean;
     selectConversation: (conversation: Conversation) => void;
-    sendMessage: (content: string) => Promise<{ error: any | null }>;
+    sendMessage: (content: string, conversationId?: number) => Promise<{ error: any | null }>;
     startConversation: (recipientId: string) => Promise<Conversation | null>;
 }
 
@@ -99,14 +99,16 @@ export const MessageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
 
-    const sendMessage = async (content: string) => {
-        if (!user || !selectedConversation) {
-            return { error: new Error("No user or conversation selected") };
+    const sendMessage = async (content: string, conversationId?: number) => {
+        const targetConversationId = conversationId || selectedConversation?.id;
+
+        if (!user || !targetConversationId) {
+            return { error: new Error("No user or target conversation to send the message to.") };
         }
         const { error } = await supabase
             .from('messages')
             .insert({
-                conversation_id: selectedConversation.id,
+                conversation_id: targetConversationId,
                 sender_id: user.id,
                 content: content.trim()
             });
