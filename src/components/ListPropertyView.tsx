@@ -94,8 +94,14 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
 
     if (newImageFiles.length > 0) {
         setIsUploading(true);
-        const uploadPromises = newImageFiles.map(file => {
-            const filePath = `${user!.id}/${Date.now()}-${file.name}`;
+        const uploadPromises = newImageFiles.map((file, index) => {
+            // RLS FIX: Re-introducing user-specific folders for image uploads.
+            // The previous attempt to upload to the root failed, suggesting the RLS policy
+            // requires uploads to be within a folder named after the user's ID.
+            const fileExt = file.name.split('.').pop();
+            // FIX: Add index to filename to prevent collisions when uploading multiple files at once.
+            const fileName = `${Date.now()}-${index}.${fileExt}`;
+            const filePath = `${user!.id}/${fileName}`;
             return supabase.storage.from('property_images').upload(filePath, file);
         });
 
@@ -110,7 +116,11 @@ const ListPropertyView: React.FC<ListPropertyViewProps> = ({ propertyId }) => {
 
             finalImageUrls = [...finalImageUrls, ...newUrls];
         } catch (uploadError: any) {
-            setFormError(`${t('error_uploading_images')}: ${uploadError.message}`);
+            let detailedError = uploadError.message;
+            if (detailedError.includes('security policy')) {
+                detailedError = "This is likely due to a Row Level Security (RLS) policy on your Supabase storage. Please check that the 'property_images' bucket allows authenticated users to insert objects."
+            }
+            setFormError(`${t('error_uploading_images')}: ${detailedError}`);
             setIsLoading(false);
             setIsUploading(false);
             return;
