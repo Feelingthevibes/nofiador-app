@@ -31,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isAdmin = useMemo(() => user?.profile?.role === 'admin', [user]);
 
     const fetchUserProfile = async (supabaseUser: any): Promise<UserProfile | null> => {
+        if (!supabaseUser) return null;
         const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
@@ -62,20 +63,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             
-            if (_event === 'SIGNED_IN') {
-                setTimeout(() => {
-                    navigateTo('/profile');
-                }, 0);
-            }
-
+            let profile = null;
             if (session?.user) {
-                const profile = await fetchUserProfile(session.user);
+                profile = await fetchUserProfile(session.user);
                 setUser({ ...session.user, profile });
                  if (profile?.preferred_language) {
                     setLanguage(profile.preferred_language);
                 }
             } else {
                 setUser(null);
+            }
+
+            // FIX: Handle redirect after successful sign-in, including email confirmation.
+            // Check for the SIGNED_IN event and ensure a profile has been loaded before redirecting.
+            if (_event === 'SIGNED_IN' && profile) {
+                // Use a minimal timeout to ensure the state update has propagated through React
+                setTimeout(() => {
+                    navigateTo('/profile');
+                }, 0);
             }
         });
 
