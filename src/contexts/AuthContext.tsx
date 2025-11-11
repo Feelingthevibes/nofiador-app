@@ -10,11 +10,14 @@ interface AuthContextType {
     session: Session | null;
     isAuthenticated: boolean;
     loading: boolean;
+    isAdmin: boolean;
     login: (email: string, password: string) => Promise<{ error: Error | null }>;
     signup: (email: string, password: string, role: Role, preferred_language: Language) => Promise<{ error: Error | null }>;
     logout: () => Promise<void>;
     toggleSaveProperty: (propertyId: number) => Promise<void>;
     updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: any | null }>;
+    fetchAllUsers: () => Promise<{ data: UserProfile[] | null, error: any | null }>;
+    deleteUserByAdmin: (userId: string) => Promise<{ error: any | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -24,6 +27,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
     const { setLanguage } = useLanguage();
+    
+    const isAdmin = useMemo(() => user?.email === 'whatjut@gmail.com', [user]);
 
     const fetchUserProfile = async (supabaseUser: any): Promise<UserProfile | null> => {
         const { data: profile, error } = await supabase
@@ -143,18 +148,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser({ ...user, profile: data });
         }
     };
+
+    const fetchAllUsers = async () => {
+        if (!isAdmin) return { data: null, error: new Error('Permission denied.') };
+        const { data, error } = await supabase.from('profiles').select('*');
+        return { data, error };
+    };
+
+    const deleteUserByAdmin = async (userId: string) => {
+        if (!isAdmin) return { error: new Error('Permission denied.') };
+        const { error } = await supabase.from('profiles').delete().eq('id', userId);
+        return { error };
+    };
     
     const value = useMemo(() => ({
         user,
         session,
         isAuthenticated: !!user,
         loading,
+        isAdmin,
         login,
         signup,
         logout,
         toggleSaveProperty,
         updateProfile,
-    }), [user, session, loading]);
+        fetchAllUsers,
+        deleteUserByAdmin
+    }), [user, session, loading, isAdmin]);
 
     return (
         <AuthContext.Provider value={value}>

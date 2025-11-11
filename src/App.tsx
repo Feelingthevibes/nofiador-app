@@ -10,6 +10,7 @@ import ListPropertyView from './components/ListPropertyView';
 import ProfileView from './components/ProfileView';
 import PropertyDetailView from './components/PropertyDetailView';
 import SettingsView from './components/SettingsView';
+import AdminView from './components/AdminView';
 
 import LoginModal from './components/LoginModal';
 import SignupModal from './components/SignupModal';
@@ -33,7 +34,7 @@ const AppRouter: React.FC = () => {
 
     const [currentPath, setCurrentPath] = useState(getPathFromHash());
     const [authModal, setAuthModal] = useState<AuthModal>(null);
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, loading, isAdmin } = useAuth();
 
     useEffect(() => {
         const handleHashChange = () => {
@@ -61,6 +62,8 @@ const AppRouter: React.FC = () => {
         } else if (currentPath.startsWith('/list')) {
              const propertyId = currentPath.split('/')[2];
              content = isAuthenticated ? <ListPropertyView propertyId={propertyId ? parseInt(propertyId) : undefined} /> : <PropertyList openAuthModal={setAuthModal} />;
+        } else if (currentPath === '/admin') {
+            content = isAdmin ? <AdminView /> : <PropertyList openAuthModal={setAuthModal} />;
         } else if (currentPath === '/settings') {
             content = isAuthenticated ? <SettingsView /> : <PropertyList openAuthModal={setAuthModal} />;
         } else {

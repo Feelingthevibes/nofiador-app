@@ -29,7 +29,7 @@ const LanguageSwitcher: React.FC = () => {
 
 const Header: React.FC<HeaderProps> = ({ currentPath, openAuthModal }) => {
     const { t } = useLanguage();
-    const { isAuthenticated, user, logout } = useAuth();
+    const { isAuthenticated, user, logout, isAdmin } = useAuth();
 
     const navLinkStyle = (path: string) => 
         `cursor-pointer text-sm sm:text-base font-medium transition-colors ${
@@ -63,6 +63,11 @@ const Header: React.FC<HeaderProps> = ({ currentPath, openAuthModal }) => {
                                     {t('list_property')}
                                 </span>
                             )}
+                            {isAdmin && (
+                                <span onClick={() => navigateTo('/admin')} className={navLinkStyle('/admin')}>
+                                    Admin
+                                </span>
+                            )}
                             {isAuthenticated ? (
                                 <>
                                     <span onClick={() => navigateTo('/profile')} className={navLinkStyle('/profile')}>
@@ -85,7 +90,11 @@ const Header: React.FC<HeaderProps> = ({ currentPath, openAuthModal }) => {
                         </nav>
                          <div className="sm:hidden flex items-center">
                              {isAuthenticated ? (
-                                <span onClick={() => navigateTo('/profile')} className="material-icons text-gray-600 cursor-pointer">account_circle</span>
+                                <button onClick={() => navigateTo('/profile')} className="text-gray-600 hover:text-brand-dark focus:outline-none" aria-label={t('profile')}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
                              ) : (
                                 <button onClick={() => openAuthModal('login')} className="bg-brand-primary text-white text-sm font-bold py-2 px-3 rounded-lg hover:bg-red-600 transition-colors">
                                     {t('login')}

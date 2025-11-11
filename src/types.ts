@@ -1,7 +1,7 @@
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 export type Language = 'en' | 'es';
-export type Role = 'renter' | 'landlord';
+export type Role = 'renter' | 'landlord' | 'admin';
 export type AuthModal = 'login' | 'signup' | null;
 
 export interface UserProfile {
@@ -13,9 +13,10 @@ export interface UserProfile {
   contact_phone: string | null;
 }
 
-export interface User extends SupabaseUser {
+// FIX: Changed interface extending a type to a type alias for better compatibility.
+export type User = SupabaseUser & {
   profile: UserProfile | null;
-}
+};
 
 export interface Property {
   id: number;
