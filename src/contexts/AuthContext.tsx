@@ -28,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
     const { setLanguage } = useLanguage();
     
-    const isAdmin = useMemo(() => user?.email === 'whatjut@gmail.com', [user]);
+    const isAdmin = useMemo(() => user?.profile?.role === 'admin', [user]);
 
     const fetchUserProfile = async (supabaseUser: any): Promise<UserProfile | null> => {
         const { data: profile, error } = await supabase
