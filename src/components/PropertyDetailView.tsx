@@ -22,6 +22,7 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
     const { user, toggleSaveProperty } = useAuth();
     const [property, setProperty] = useState<Property | null>(null);
     const [mainImage, setMainImage] = useState<string>('');
+    const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
     useEffect(() => {
         if (!loading && properties.length > 0) {
@@ -61,7 +62,12 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
             <div className="bg-white rounded-lg shadow-xl overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-0">
                     <div className="md:col-span-3 p-4">
-                        <img src={mainImage} alt="Main property view" className="w-full h-96 object-cover rounded-lg mb-2"/>
+                        <img 
+                            src={mainImage} 
+                            alt="Main property view" 
+                            className="w-full h-96 object-cover rounded-lg mb-2 cursor-zoom-in"
+                            onClick={() => setZoomedImage(mainImage)}
+                        />
                         <div className="flex space-x-2 overflow-x-auto">
                             {property.images.map((img, index) => (
                                 <img
@@ -136,6 +142,26 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
                     )}
                 </div>
             </div>
+            {zoomedImage && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[60]" 
+                    onClick={() => setZoomedImage(null)}
+                >
+                    <button 
+                        className="absolute top-4 right-4 text-white text-5xl font-bold z-10" 
+                        onClick={() => setZoomedImage(null)}
+                        aria-label="Close"
+                    >&times;</button>
+                    <div className="relative w-full h-full flex justify-center items-center p-4">
+                        <img 
+                            src={zoomedImage} 
+                            alt="Zoomed property view" 
+                            className="max-w-full max-h-full object-contain" 
+                            onClick={(e) => e.stopPropagation()} 
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -106,6 +106,8 @@ export const translations = {
     error_title: "Error",
     youtube_video_link: "YouTube Video Link",
     video_tour: "Video Tour",
+    review_changes_and_update: "Review your changes below. When you are ready, click 'Update Listing' to save them.",
+    updating: "Updating...",
   },
   es: {
     site_name: "NoFiador.com",
@@ -159,7 +161,7 @@ export const translations = {
     all_neighborhoods: "Todos los Barrios",
     sort_by_price: "Ordenar por precio",
     price_low_to_high: "Precio: Menor a Mayor",
-    price_high_to_low: "Precio: Mayor a Menor",
+    price_high_to_low: "Precio: Mayor a Mayor",
     next_step: "Siguiente Paso",
     back_step: "Atrás",
     publish_listing: "Publicar Propiedad",
@@ -214,6 +216,8 @@ export const translations = {
     error_title: "Error",
     youtube_video_link: "Enlace de Video de YouTube",
     video_tour: "Tour en Video",
+    review_changes_and_update: "Revisa tus cambios a continuación. Cuando estés listo, haz clic en 'Actualizar Propiedad' para guardarlos.",
+    updating: "Actualizando...",
   },
 };
 
