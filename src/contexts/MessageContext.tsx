@@ -105,13 +105,14 @@ export const MessageProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user || !targetConversationId) {
             return { error: new Error("No user or target conversation to send the message to.") };
         }
-        const { error } = await supabase
-            .from('messages')
-            .insert({
-                conversation_id: targetConversationId,
-                sender_id: user.id,
-                content: content.trim()
-            });
+        
+        // FIX: Call the secure 'send_message' database function (RPC)
+        // instead of inserting directly. This resolves the RLS race condition.
+        const { error } = await supabase.rpc('send_message', {
+            p_conversation_id: targetConversationId,
+            p_content: content.trim()
+        });
+        
         return { error };
     };
     
