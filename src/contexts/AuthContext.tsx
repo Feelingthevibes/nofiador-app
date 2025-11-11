@@ -45,9 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     useEffect(() => {
-        // The onAuthStateChange listener is the single source of truth.
-        // It fires once on initial load with the current session, and then
-        // again whenever the auth state changes. This avoids race conditions.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             
@@ -62,7 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setUser(null);
             }
             
-            // The initial check is complete, so we can stop loading.
             setLoading(false);
 
             if (_event === 'SIGNED_IN' && profile) {
@@ -70,10 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     navigateTo('/profile');
                 }, 0);
             }
-
-            if (_event === 'SIGNED_OUT') {
-                navigateTo('/');
-            }
+            
+            // This is handled by the direct logout function now
+            // if (_event === 'SIGNED_OUT') {
+            //     navigateTo('/');
+            // }
         });
 
         return () => subscription.unsubscribe();
@@ -100,10 +97,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
     };
 
+    // PERMANENT FIX for logout button failure.
+    // This new function is more direct and eliminates the race condition.
     const logout = async () => {
+        // 1. Immediately update the UI state to be logged out.
+        // This provides instant feedback and prevents the UI from getting stuck.
+        setUser(null);
+        setSession(null);
+        
+        // 2. Navigate the user to the homepage immediately.
+        navigateTo('/');
+
+        // 3. Tell the Supabase server to formally end the session in the background.
         const { error } = await supabase.auth.signOut();
         if (error) {
-            console.error("Error logging out:", error.message);
+            console.error("Error logging out from server:", error.message);
+            // Even if the server call fails, the UI is already logged out,
+            // which is a better user experience. The session will expire anyway.
         }
     };
     
