@@ -28,7 +28,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
     const { setLanguage } = useLanguage();
     
-    // FINAL FIX: Reverted to the correct role-based admin check.
     const isAdmin = useMemo(() => user?.profile?.role === 'admin', [user]);
 
     const fetchUserProfile = async (supabaseUser: any): Promise<UserProfile | null> => {
@@ -63,12 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             
-            // FIX: Redirect to profile on SIGNED_IN event.
-            // This handles redirects for both email verification and regular login.
-            // The previous condition was preventing the redirect after email confirmation.
             if (_event === 'SIGNED_IN') {
-                // Use a timeout to ensure Supabase client has cleared the URL hash
-                // and React state has updated before navigation.
                 setTimeout(() => {
                     navigateTo('/profile');
                 }, 0);
@@ -111,6 +105,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = async () => {
         await supabase.auth.signOut();
+        // FIX: Manually set user to null immediately after sign-out.
+        // This makes the UI update instantly and reliably, fixing the race condition
+        // where the app was waiting for the onAuthStateChange listener which could be delayed.
+        setUser(null);
     };
     
     const updateProfile = async (updates: Partial<UserProfile>) => {
