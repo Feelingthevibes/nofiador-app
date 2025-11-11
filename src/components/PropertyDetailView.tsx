@@ -22,7 +22,7 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
     const { user, toggleSaveProperty } = useAuth();
     const [property, setProperty] = useState<Property | null>(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
-    const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+    const [zoomedImageIndex, setZoomedImageIndex] = useState<number | null>(null);
 
     useEffect(() => {
         if (!loading && properties.length > 0) {
@@ -33,6 +33,21 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
             }
         }
     }, [slug, properties, loading]);
+    
+    const handleNextImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (zoomedImageIndex !== null && property) {
+            setZoomedImageIndex((prevIndex) => (prevIndex! + 1) % property.images.length);
+        }
+    };
+
+    const handlePrevImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (zoomedImageIndex !== null && property) {
+            setZoomedImageIndex((prevIndex) => (prevIndex! - 1 + property.images.length) % property.images.length);
+        }
+    };
+
 
     if (loading) {
         return <div className="text-center py-12">Loading property details...</div>;
@@ -67,7 +82,7 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
                             src={mainImage} 
                             alt="Main property view" 
                             className="w-full h-96 object-cover rounded-lg mb-2 cursor-zoom-in"
-                            onClick={() => setZoomedImage(mainImage)}
+                            onClick={() => setZoomedImageIndex(selectedImageIndex)}
                         />
                         <div className="flex space-x-2 overflow-x-auto">
                             {property.images.map((img, index) => (
@@ -143,24 +158,46 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug }) => {
                     )}
                 </div>
             </div>
-            {zoomedImage && (
+            {zoomedImageIndex !== null && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[60]" 
-                    onClick={() => setZoomedImage(null)}
+                    onClick={() => setZoomedImageIndex(null)}
                 >
                     <button 
                         className="absolute top-4 right-4 text-white text-5xl font-bold z-10" 
-                        onClick={() => setZoomedImage(null)}
+                        onClick={() => setZoomedImageIndex(null)}
                         aria-label="Close"
                     >&times;</button>
+                    
+                    <button
+                        onClick={handlePrevImage}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black bg-opacity-30 rounded-full p-2 hover:bg-opacity-50 transition-opacity z-10"
+                        aria-label="Previous image"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+
                     <div className="relative w-full h-full flex justify-center items-center p-4">
                         <img 
-                            src={zoomedImage} 
+                            src={property.images[zoomedImageIndex]} 
                             alt="Zoomed property view" 
                             className="max-w-full max-h-full object-contain" 
                             onClick={(e) => e.stopPropagation()} 
                         />
                     </div>
+                    
+                    <button
+                        onClick={handleNextImage}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black bg-opacity-30 rounded-full p-2 hover:bg-opacity-50 transition-opacity z-10"
+                        aria-label="Next image"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
                 </div>
             )}
         </div>
