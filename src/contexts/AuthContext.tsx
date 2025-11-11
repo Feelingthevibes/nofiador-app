@@ -66,11 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     navigateTo('/profile');
                 }, 0);
             }
-            
-            // This is handled by the direct logout function now
-            // if (_event === 'SIGNED_OUT') {
-            //     navigateTo('/');
-            // }
         });
 
         return () => subscription.unsubscribe();
@@ -97,23 +92,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
     };
 
-    // PERMANENT FIX for logout button failure.
-    // This new function is more direct and eliminates the race condition.
     const logout = async () => {
-        // 1. Immediately update the UI state to be logged out.
-        // This provides instant feedback and prevents the UI from getting stuck.
         setUser(null);
         setSession(null);
-        
-        // 2. Navigate the user to the homepage immediately.
         navigateTo('/');
-
-        // 3. Tell the Supabase server to formally end the session in the background.
         const { error } = await supabase.auth.signOut();
         if (error) {
             console.error("Error logging out from server:", error.message);
-            // Even if the server call fails, the UI is already logged out,
-            // which is a better user experience. The session will expire anyway.
         }
     };
     
@@ -160,8 +145,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const deleteUserByAdmin = async (userId: string) => {
-        if (!isAdmin) return { error: new Error('Permission denied.') };
-        const { error } = await supabase.from('profiles').delete().eq('id', userId);
+        if (!isAdmin) {
+            return { error: new Error('Permission denied. You must be an admin.') };
+        }
+        
+        // This now calls the secure Edge Function to perform a full deletion.
+        const { error } = await supabase.functions.invoke('delete-user-by-admin', {
+            body: { userIdToDelete: userId },
+        });
+
+        if (error) {
+            console.error("Error invoking delete-user-by-admin function:", error);
+            // The profiles table entry might still exist if the auth deletion fails.
+            // A more robust implementation could handle this, but for now, we just report the primary error.
+        } else {
+             // If the auth user is deleted, the profile is deleted automatically by a CASCADE constraint.
+             // If not, we fall back to deleting just the profile record.
+             const { error: profileError } = await supabase.from('profiles').delete().eq('id', userId);
+             if (profileError) {
+                console.error("Could not delete profile after auth user deletion:", profileError);
+                // Return the profile error as a secondary issue
+                return { error: profileError };
+             }
+        }
+
         return { error };
     };
     

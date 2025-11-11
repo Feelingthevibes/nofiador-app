@@ -31,13 +31,13 @@ const AdminView: React.FC = () => {
             return;
         }
 
-        if (window.confirm(`Are you sure you want to delete this user's profile? This action cannot be undone.`)) {
+        if (window.confirm(`Are you sure you want to completely delete this user? This action will remove their login and profile permanently and cannot be undone.`)) {
             const { error: deleteError } = await deleteUserByAdmin(userIdToDelete);
             if (deleteError) {
                 alert(`Failed to delete user: ${deleteError.message}`);
             } else {
                 setUsers(prevUsers => prevUsers.filter(u => u.id !== userIdToDelete));
-                alert('User profile deleted successfully.');
+                alert('User completely deleted from the system.');
             }
         }
     };
@@ -109,9 +109,6 @@ const AdminView: React.FC = () => {
                         {users.length > 0 ? "No users found matching your search." : "No user profiles found."}
                     </div>
                  )}
-            </div>
-             <div className="mt-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 text-sm">
-                <p><strong>Admin Note:</strong> Deleting a user here removes their profile data from the `profiles` table. It does <strong>not</strong> remove their authentication account from Supabase Auth. For full user deletion, a Supabase Edge Function with service-level privileges is required.</p>
             </div>
         </div>
     );
