@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { Property, NewPropertyData } from '../../../types';
+import { supabase } from '../lib/supabaseClient';
+import { Property, NewPropertyData } from '../types';
 import { useAuth } from './AuthContext';
 
 interface PropertyContextType {
@@ -101,6 +101,33 @@ export const PropertyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     
     const deleteProperty = async (propertyId: number) => {
+        const propertyToDelete = properties.find(p => p.id === propertyId);
+
+        if (propertyToDelete && propertyToDelete.images.length > 0) {
+            const filePaths = propertyToDelete.images.map(url => {
+                try {
+                    const urlObject = new URL(url);
+                    const pathSegments = urlObject.pathname.split('/');
+                    const bucketIndex = pathSegments.indexOf('property_images');
+                    if (bucketIndex > -1) {
+                        return pathSegments.slice(bucketIndex + 1).join('/');
+                    }
+                    return '';
+                } catch(e) {
+                    console.error("Invalid image URL, cannot extract path:", url);
+                    return '';
+                }
+            }).filter(Boolean);
+            
+            if (filePaths.length > 0) {
+                const { error: storageError } = await supabase.storage.from('property_images').remove(filePaths);
+                if (storageError) {
+                    console.error("Error deleting images from storage:", storageError);
+                    return { error: storageError };
+                }
+            }
+        }
+
         const { error: deleteError } = await supabase
             .from('properties')
             .delete()

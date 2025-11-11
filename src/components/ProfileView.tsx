@@ -92,11 +92,24 @@ const ProfileView: React.FC = () => {
 
     return (
         <div>
-            <div className="mb-8">
+            <div className="mb-8 p-6 bg-white rounded-lg shadow">
                 <h1 className="text-3xl font-bold text-brand-dark">{t('welcome_back')},</h1>
                 <p className="text-gray-600">{user.email}</p>
             </div>
-            {user.profile?.role === 'landlord' ? renderLandlordProfile() : renderRenterProfile()}
+            
+            <div className="mb-8 p-6 bg-white rounded-lg shadow">
+                 <div className="flex justify-between items-center">
+                     <h2 className="text-2xl font-bold text-brand-dark">{t('my_messages')}</h2>
+                     <button onClick={() => navigateTo('/messages')} className="text-sm bg-brand-secondary hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        View All
+                    </button>
+                 </div>
+            </div>
+
+            <div className="p-6 bg-white rounded-lg shadow">
+              {user.profile?.role === 'landlord' ? renderLandlordProfile() : renderRenterProfile()}
+            </div>
+
              {selectedProperty && (
                 <PropertyDetailModal
                 property={selectedProperty}

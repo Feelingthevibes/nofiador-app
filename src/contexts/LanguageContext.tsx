@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useCallback, useMemo } from 'react';
-import { Language } from '../../../types';
-import { translations } from '../../../constants';
+import { Language } from '../types';
+import { translations } from '../constants';
 
 interface LanguageContextType {
     language: Language;

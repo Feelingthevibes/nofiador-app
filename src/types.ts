@@ -14,7 +14,6 @@ export interface UserProfile {
   email?: string; // For admin view
 }
 
-// FIX: Changed interface extending a type to a type alias for better compatibility.
 export type User = SupabaseUser & {
   profile: UserProfile | null;
 };
@@ -41,3 +40,34 @@ export interface Property {
 }
 
 export type NewPropertyData = Omit<Property, 'id' | 'landlord_id' | 'slug' | 'profiles'>;
+
+export interface Conversation {
+  id: number;
+  participant_one_id: string;
+  participant_two_id: string;
+  created_at: string;
+  // This is not a real DB column, but we'll join it for the UI
+  other_participant_name?: string; 
+  other_participant_id?: string;
+  last_message_content?: string;
+  last_message_time?: string;
+}
+
+export interface Message {
+  id: number;
+  conversation_id: number;
+  sender_id: string;
+  content: string;
+  created_at: string;
+}
+
+declare global {
+  interface ImportMetaEnv {
+    readonly VITE_SUPABASE_URL: string;
+    readonly VITE_SUPABASE_ANON_KEY: string;
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}

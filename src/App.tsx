@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { PropertyProvider } from './contexts/PropertyContext';
+import { MessageProvider } from './contexts/MessageContext';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -11,6 +12,7 @@ import ProfileView from './components/ProfileView';
 import PropertyDetailView from './components/PropertyDetailView';
 import SettingsView from './components/SettingsView';
 import AdminView from './components/AdminView';
+import ChatView from './components/ChatView';
 
 import LoginModal from './components/LoginModal';
 import SignupModal from './components/SignupModal';
@@ -18,7 +20,6 @@ import { AuthModal } from './types';
 
 // Custom navigation function using hash routing
 export const navigateTo = (path: string) => {
-    // Ensure the hash always starts with # and the path with /
     const newHash = `#${path.startsWith('/') ? path : '/' + path}`;
     if (window.location.hash !== newHash) {
         window.location.hash = newHash;
@@ -42,7 +43,6 @@ const AppRouter: React.FC = () => {
         };
         window.addEventListener('hashchange', handleHashChange);
         
-        // Set initial path in case the page is loaded with a hash
         handleHashChange();
 
         return () => {
@@ -56,7 +56,7 @@ const AppRouter: React.FC = () => {
     } else {
         if (currentPath.startsWith('/property/')) {
             const slug = currentPath.split('/')[2];
-            content = <PropertyDetailView slug={slug} />;
+            content = <PropertyDetailView slug={slug} openAuthModal={setAuthModal} />;
         } else if (currentPath === '/profile') {
             content = isAuthenticated ? <ProfileView /> : <PropertyList openAuthModal={setAuthModal} />;
         } else if (currentPath.startsWith('/list')) {
@@ -66,9 +66,9 @@ const AppRouter: React.FC = () => {
             content = isAdmin ? <AdminView /> : <PropertyList openAuthModal={setAuthModal} />;
         } else if (currentPath === '/settings') {
             content = isAuthenticated ? <SettingsView /> : <PropertyList openAuthModal={setAuthModal} />;
+        } else if (currentPath === '/messages') {
+            content = isAuthenticated ? <ChatView /> : <PropertyList openAuthModal={setAuthModal} />;
         } else {
-            // Default to PropertyList for the root path ('/') and any other unrecognized paths.
-            // This prevents the 404 error on initial load.
             content = <PropertyList openAuthModal={setAuthModal} />;
         }
     }
@@ -91,7 +91,9 @@ const App: React.FC = () => {
         <LanguageProvider>
             <AuthProvider>
                 <PropertyProvider>
-                    <AppRouter />
+                    <MessageProvider>
+                        <AppRouter />
+                    </MessageProvider>
                 </PropertyProvider>
             </AuthProvider>
         </LanguageProvider>
