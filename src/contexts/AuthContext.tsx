@@ -45,21 +45,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     useEffect(() => {
-        const getSessionAndProfile = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
-            
-            if (session?.user) {
-                const profile = await fetchUserProfile(session.user);
-                setUser({ ...session.user, profile });
-                if (profile?.preferred_language) {
-                    setLanguage(profile.preferred_language);
-                }
-            }
-            setLoading(false);
-        };
-        getSessionAndProfile();
-
+        // The onAuthStateChange listener is the single source of truth.
+        // It fires once on initial load with the current session, and then
+        // again whenever the auth state changes. This avoids race conditions.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             
@@ -74,6 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setUser(null);
             }
             
+            // The initial check is complete, so we can stop loading.
+            setLoading(false);
+
             if (_event === 'SIGNED_IN' && profile) {
                 setTimeout(() => {
                     navigateTo('/profile');
