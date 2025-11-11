@@ -118,6 +118,8 @@ export const translations = {
     message_failed: "Failed to send message.",
     start_conversation_prompt: "Send your first message to the landlord about this property.",
     login_to_contact: "Please log in to contact the landlord.",
+    this_is_your_listing: "This is one of your listings.",
+    login_to_message_cta: "Log In to Message",
   },
   es: {
     site_name: "NoFiador.com",
@@ -238,6 +240,8 @@ export const translations = {
     message_failed: "Error al enviar el mensaje.",
     start_conversation_prompt: "Envía tu primer mensaje al arrendador sobre esta propiedad.",
     login_to_contact: "Por favor, inicia sesión para contactar al arrendador.",
+    this_is_your_listing: "Esta es una de tus propiedades.",
+    login_to_message_cta: "Inicia Sesión para Enviar Mensaje",
   },
 };
 

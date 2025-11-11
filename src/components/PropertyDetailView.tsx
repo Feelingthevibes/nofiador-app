@@ -186,13 +186,18 @@ const PropertyDetailView: React.FC<PropertyDetailViewProps> = ({ slug, openAuthM
                                     {isSaved ? t('saved') : t('save')}
                                 </button>
                             )}
-                            {isAuthenticated && user?.id !== property.landlord_id ? (
-                                <ContactLandlordForm landlordId={property.landlord_id} />
-                            ) : (
+                            
+                            {!isAuthenticated ? (
                                 <div className="bg-gray-100 p-4 rounded-md text-center">
                                     <p className="text-gray-600">{t('login_to_contact')}</p>
                                     <button onClick={() => openAuthModal('login')} className="mt-2 text-brand-primary font-bold">{t('login')}</button>
                                 </div>
+                            ) : user?.id === property.landlord_id ? (
+                                <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded-md text-center">
+                                    <p className="font-semibold">{t('this_is_your_listing')}</p>
+                                </div>
+                            ) : (
+                                <ContactLandlordForm landlordId={property.landlord_id} />
                             )}
                         </div>
                     </div>
