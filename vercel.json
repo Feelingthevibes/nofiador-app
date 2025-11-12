@@ -4,5 +4,11 @@
       "src": "package.json",
       "use": "@vercel/vite"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
