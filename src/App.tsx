@@ -1,4 +1,4 @@
-// Trigger fresh build
+// Forcing a fresh build with a new commit.
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
