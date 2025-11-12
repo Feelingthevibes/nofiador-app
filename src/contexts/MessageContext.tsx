@@ -27,7 +27,7 @@ export const MessageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const fetchConversations = useCallback(async () => {
         if (!user) return;
         setLoadingConversations(true);
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('conversations')
             .select('*, participant_one_id(profiles(contact_name)), participant_two_id(profiles(contact_name))')
             .or(`participant_one_id.eq.${user.id},participant_two_id.eq.${user.id}`);
@@ -72,7 +72,7 @@ export const MessageProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user || user.id === recipientId) return null;
         
         // Check if a conversation already exists
-        const { data: existing, error: existingError } = await supabase
+        const { data: existing } = await supabase
             .from('conversations')
             .select('*')
             .or(`(participant_one_id.eq.${user.id},participant_two_id.eq.${recipientId}),(participant_one_id.eq.${recipientId},participant_two_id.eq.${user.id})`)
